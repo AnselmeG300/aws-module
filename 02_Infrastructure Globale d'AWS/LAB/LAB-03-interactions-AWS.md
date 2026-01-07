@@ -143,18 +143,13 @@ exit
 1. **Ouvrez un terminal** et configurez la région :
    ```bash
    export AWS_REGION=us-east-1
-   export MY_NAME="John"  # Remplacez par votre prénom
+   export MY_NAME="EC2-John"  # Remplacez par votre EC2-prénom
+   export STORAGE=100  # Remplacez par votre EC2-prénom
    ```
 
 2. **Créez l'instance** :
    ```bash
-   aws ec2 run-instances \
-     --image-id ami-0c02fb54eef1ca2e6 \
-     --instance-type t3.micro \
-     --key-name aws-training-key \
-     --security-groups "SSH-Access" \
-     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=EC2-$MY_NAME},{Key=Owner,Value=$MY_NAME},{Key=Classroom,Value=AWS-Training-Jour2}]" \
-     --region us-east-1
+   aws ec2 run-instances --image-id "ami-068c0051b15cdb816" --count 1 --instance-type t3.micro --key-name "aws-training-key" --security-group-ids "sg-096869bc076d1c94a" --block-device-mappings DeviceName=/dev/sda1,Ebs={VolumeSize=$STORAGE} --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value='$MY_NAME'}]'
    ```
 
 3. **Notez l'ID d'instance** (sortie : `InstanceId`)
