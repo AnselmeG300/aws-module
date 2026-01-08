@@ -1,12 +1,23 @@
 # LAB 03 — Interactions avec AWS : Console, CLI et SDK
 
 ## Objectif
-Maîtriser les **3 moyens d'interaction** avec AWS en effectuant le même cycle de vie pour une ressource :
-1. **Créer** une ressource EC2 (instance de calcul)
-2. **Se connecter** et utiliser la ressource
-3. **Détruire** la ressource
+Maîtriser les **3 moyens d'interaction** avec AWS à travers différents cas d'usage :
 
-**Important** : Chaque ressource doit être **taguée avec votre prénom** pour le suivi et l'identification.
+### 🖥️ **EXERCICE 1 & 2 : Console et CLI**
+Manipuler des **instances EC2** (infrastructure) :
+1. **Créer** une instance EC2
+2. **Se connecter** à l'instance
+3. **Détruire** l'instance
+
+### 🐍 **EXERCICE 3 : SDK (Python Boto3)**
+Manipuler des **données DynamoDB** (applications) :
+1. **Créer** une table DynamoDB (via Console)
+2. **CRUD** : Create, Read, Update, Delete de produits (via SDK)
+3. **Vérifier** les opérations dans la Console
+
+**⚠️ Important** : Le SDK est utilisé pour la manipulation de **données**, pas pour créer de l'infrastructure.
+
+**Tags** : Toutes les ressources EC2 doivent être taguées avec votre prénom.
 
 ---
 
@@ -20,11 +31,11 @@ Maîtriser les **3 moyens d'interaction** avec AWS en effectuant le même cycle 
 
 ### Prérequis
 - Accès à un compte AWS (compte de labo partagé ou personnel)
-- **Fichier `aws-training-key.pem` fourni par le formateur** ✅
-- AWS CLI installée et configurée (pour les exercices CLI et SDK)
-- Python 3.8+ et Boto3 (pour l'exercice SDK)
+- **Fichier `aws-training-key.pem` fourni par le formateur** ✅ (pour EC2 uniquement)
+- AWS CLI installée et configurée (pour l'exercice CLI)
+- Python 3.8+ et Boto3 (pour l'exercice SDK avec DynamoDB)
 
-### Paramètres communs pour tous les exercices
+### Paramètres communs pour les exercices Console et CLI (EC2)
 | Paramètre | Valeur |
 |-----------|--------|
 | **Région** | us-east-1 (Virginie) |
@@ -34,6 +45,8 @@ Maîtriser les **3 moyens d'interaction** avec AWS en effectuant le même cycle 
 | **Tag : Name** | `EC2-[VOTRE_PRENOM]` |
 | **Tag : Owner** | `[VOTRE_PRENOM]` |
 | **Tag : Classroom** | `AWS-Training-Jour2` |
+
+**Note** : L'exercice SDK (EXERCICE 3) utilise DynamoDB, pas EC2.
 
 ---
 
@@ -724,328 +737,66 @@ def lambda_handler(event, context):
 # Production avec IAM Role (pas de credentials)
 dynamodb = boto3.resource('dynamodb', region_name=REGION)  # ← Pas de credentials !
 ```
-   - Cliquez sur **"Connect"** pour accéder au terminal
-
-2. **Option B : Session Manager**
-   - AWS Systems Manager > Session Manager > Start session
-   - Sélectionnez votre instance
-   - Cliquez sur **"Start session"**
-
-3. **Option C : SSH (si vous avez la clé)**
-   ```bash
-   ssh -i aws-training-key.pem ec2-user@<PUBLIC_IP>
-   ```
-
-### Étape 3.3 : Détruire l'instance via SDK (Local)
-
-1. **Créez un script Python** (`lab03-terminate-instance.py`) :
-   ```python
-   import boto3
-   
-   # ⚠️ Configuration des credentials AWS (même que pour create)
-   AWS_ACCESS_KEY_ID = "AKIA2XXXXXXXXXXX"      # ← Même clé que create-instance.py
-   AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxxxxxxx" # ← Même secret que create-instance.py
-   
-   # Configuration
-   MY_NAME = "John"  # Même prénom qu'à la création
-   REGION = "us-east-1"
-   
-   # Créez un client EC2 avec vos credentials
-   ec2 = boto3.client(
-       'ec2',
-       region_name=REGION,
-       aws_access_key_id=AWS_ACCESS_KEY_ID,
-       aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-   )
-   
-   # Trouvez l'instance par son tag Name
-   instances = ec2.describe_instances(
-       Filters=[
-           {'Name': 'tag:Name', 'Values': [f'EC2-{MY_NAME}']},
-           {'Name': 'instance-state-name', 'Values': ['running', 'stopped']}
-       ]
-   )
-   
-   if instances['Reservations']:
-       instance_id = instances['Reservations'][0]['Instances'][0]['InstanceId']
-       print(f"Instance trouvée : {instance_id}")
-       
-       # Terminez l'instance
-       ec2.terminate_instances(InstanceIds=[instance_id])
-       print(f"✓ Instance {instance_id} en cours de suppression...")
-       
-       # Attendez la suppression
-       ec2.get_waiter('instance_terminated').wait(InstanceIds=[instance_id])
-       print(f"✓ Instance {instance_id} supprimée")
-   else:
-       print("Aucune instance trouvée avec ce tag")
-   ```
-
-2. **Exécutez le script** :
-   ```bash
-   python lab03-terminate-instance.py
-   ```
-
----
-
-### ☁️ Scénario 2 : Exécution en AWS LAMBDA (Serverless)
-
-**Utilisation** : Production, automatisation serverless, déclenché par événements
-
-**Spécificité** : Les credentials restent en dur (dans les variables d'environnement Lambda)
-
-#### Étape 3.1b : Créer une instance EC2 via SDK (Lambda)
-
-1. **Créez une fonction Lambda** dans la console AWS :
-   - AWS Lambda > Functions > **Create function**
-   - Runtime : **Python 3.11** (ou plus récent)
-   - Execution role : créez un rôle avec la politique **AmazonEC2FullAccess**
-
-2. **Code de la fonction Lambda** (`lambda_function.py`) :
-   ```python
-   import boto3
-   import json
-   import os
-   
-   # ⚠️ Les credentials sont stockés en variables d'environnement Lambda
-   # (Configuration > Environment variables dans la console Lambda)
-   AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-   AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-   
-   # Configuration
-   MY_NAME = os.environ.get('MY_NAME', 'John')  # Variable d'env ou défaut
-   REGION = "us-east-1"
-   
-   def lambda_handler(event, context):
-       try:
-           # Créez un client EC2 avec les credentials d'environnement
-           ec2 = boto3.client(
-               'ec2',
-               region_name=REGION,
-               aws_access_key_id=AWS_ACCESS_KEY_ID,
-               aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-           )
-           
-           # Créez une instance
-           response = ec2.run_instances(
-               ImageId='ami-0c02fb54eef1ca2e6',  # Amazon Linux 2
-               InstanceType='t3.micro',
-               KeyName='aws-training-key',
-               SecurityGroups=['SSH-Access'],
-               TagSpecifications=[
-                   {
-                       'ResourceType': 'instance',
-                       'Tags': [
-                           {'Key': 'Name', 'Value': f'EC2-{MY_NAME}'},
-                           {'Key': 'Owner', 'Value': MY_NAME},
-                           {'Key': 'Classroom', 'Value': 'AWS-Training-Lambda'}
-                       ]
-                   }
-               ],
-               MinCount=1,
-               MaxCount=1
-           )
-           
-           instance_id = response['Instances'][0]['InstanceId']
-           
-           return {
-               'statusCode': 200,
-               'body': json.dumps({
-                   'message': f'Instance créée avec succès',
-                   'instance_id': instance_id
-               })
-           }
-       
-       except Exception as e:
-           return {
-               'statusCode': 500,
-               'body': json.dumps({
-                   'error': str(e)
-               })
-           }
-   ```
-
-3. **Configuration des variables d'environnement Lambda** :
-   - Allez à **AWS Lambda > Functions > Votre fonction**
-   - Onglet **Configuration > Environment variables**
-   - Ajoutez :
-     - **Clé** : `AWS_ACCESS_KEY_ID`  
-       **Valeur** : `AKIA2XXXXXXXXXXX` (votre Access Key)
-     - **Clé** : `AWS_SECRET_ACCESS_KEY`  
-       **Valeur** : `xxxxxxxxxxxxxxxxxx` (votre Secret Key)
-     - **Clé** : `MY_NAME`  
-       **Valeur** : `John` (votre prénom)
-
-4. **Testez la fonction Lambda** :
-   - Bouton **Test** dans la console
-   - Event JSON (laissez vide ou `{}`)
-   - Cliquez sur **Test**
-   - Vérifiez dans les logs que l'instance a été créée
-
----
-
-#### Étape 3.2b : Se connecter à l'instance (Lambda)
-
-Comme en scénario local, utilisez :
-- **EC2 Connect (Navigateur)** — Recommandé
-- **Session Manager (AWS Systems Manager)**
-- **SSH** (si vous avez la clé)
-
-Les adresses IP sont visibles dans la **console EC2 > Instances**
-
----
-
-#### Étape 3.3b : Détruire l'instance via SDK (Lambda)
-
-1. **Code Lambda pour terminer l'instance** (`lambda_terminate.py`) :
-   ```python
-   import boto3
-   import json
-   import os
-   
-   AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-   AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-   
-   MY_NAME = os.environ.get('MY_NAME', 'John')
-   REGION = "us-east-1"
-   
-   def lambda_handler(event, context):
-       try:
-           ec2 = boto3.client(
-               'ec2',
-               region_name=REGION,
-               aws_access_key_id=AWS_ACCESS_KEY_ID,
-               aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-           )
-           
-           # Trouvez l'instance par son tag Name
-           instances = ec2.describe_instances(
-               Filters=[
-                   {'Name': 'tag:Name', 'Values': [f'EC2-{MY_NAME}']},
-                   {'Name': 'instance-state-name', 'Values': ['running', 'stopped']}
-               ]
-           )
-           
-           if instances['Reservations']:
-               instance_id = instances['Reservations'][0]['Instances'][0]['InstanceId']
-               
-               # Terminez l'instance
-               ec2.terminate_instances(InstanceIds=[instance_id])
-               
-               return {
-                   'statusCode': 200,
-                   'body': json.dumps({
-                       'message': f'Instance {instance_id} en cours de suppression'
-                   })
-               }
-           else:
-               return {
-                   'statusCode': 404,
-                   'body': json.dumps({
-                       'error': 'Aucune instance trouvée'
-                   })
-               }
-       
-       except Exception as e:
-           return {
-               'statusCode': 500,
-               'body': json.dumps({
-                   'error': str(e)
-               })
-           }
-   ```
-
-2. **Configuration Lambda** :
-   - Mêmes variables d'environnement que pour la création
-
-3. **Testez la suppression** :
-   - Bouton **Test** dans la console
-   - Vérifiez dans EC2 > Instances que l'instance est en cours de suppression
-
----
-
-### 📊 Comparaison : LOCAL vs LAMBDA
-
-| Aspect | LOCAL | LAMBDA |
-|--------|-------|--------|
-| **Lieu** | Votre machine | Serveur AWS |
-| **Credentials** | En dur dans le code | Variables d'environnement |
-| **Démarrage** | Manuel (`python script.py`) | Déclenché par événement/API |
-| **Durée max** | Illimitée | 15 minutes |
-| **Coût** | Gratuit | Gratuit (1M requêtes/mois) |
-| **Usage** | Dev/test | Production/automatisation |
-| **Sécurité** | ⚠️ Locale seulement | ✅ Isolée en AWS |
-
----
-
-### ⚠️ Important : Sécurité des credentials
-
-**LOCAL** :
-- ✅ Acceptable en développement
-- ❌ JAMAIS en production ou dans Git
-- Supprimez après le test
-
-**LAMBDA** :
-- ✅ Les variables d'environnement isolées dans AWS
-- ✅ Ne sont pas visibles publiquement
-- ⚠️ Toujours préférable à les avoir en dur dans le code
-
-**Bonne pratique en production** :
-- Utilisez **AWS IAM Roles** (pas de credentials en dur)
-- Lambda hérite automatiquement de son rôle d'exécution
-- Pas besoin de credentials !
-
-```python
-# Production avec IAM Role (pas de credentials)
-ec2 = boto3.client('ec2', region_name=REGION)  # ← Pas de credentials !
-```
 
 ---
 
 ## 📊 Tableau de synthèse
 
-| Étape | Console | CLI | SDK |
-|-------|---------|-----|-----|
-| **Créer** | Clics dans l'interface | `aws ec2 run-instances` | `boto3.client('ec2').run_instances()` |
-| **Récupérer infos** | Affichage direct | `aws ec2 describe-instances` | `ec2.describe_instances()` |
-| **Se connecter** | Copier l'IP et SSH | Script Bash + SSH | Script Python + SSH |
-| **Détruire** | Clics > Terminate | `aws ec2 terminate-instances` | `ec2.terminate_instances()` |
-| **Durée approx.** | 5-10 min | 5-10 min | 5-10 min |
+| Aspect | Console (EC2) | CLI (EC2) | SDK (DynamoDB) |
+|--------|---------------|-----------|----------------|
+| **Service AWS** | EC2 (instances) | EC2 (instances) | DynamoDB (base de données) |
+| **Type d'opération** | Infrastructure | Infrastructure | Données |
+| **Créer** | Clics > Launch instance | `aws ec2 run-instances` | `table.put_item()` (ajouter produit) |
+| **Lire** | Console > Instance details | `aws ec2 describe-instances` | `table.get_item()` (lire produit) |
+| **Mettre à jour** | Console > Modify | - | `table.update_item()` (modifier prix) |
+| **Supprimer** | Clics > Terminate | `aws ec2 terminate-instances` | `table.delete_item()` (supprimer produit) |
+| **Durée approx.** | 10 min | 10 min | 20-30 min |
 
 ---
 
 ## 🏆 Livrables attendus
 
-✅ **Pour chaque méthode (Console, CLI, SDK)** :
-- Instance créée et taguée avec votre prénom
-- Connexion SSH réussie
+✅ **EXERCICE 1 & 2 (Console et CLI - EC2)** :
+- Instance EC2 créée et taguée avec votre prénom
+- Connexion SSH réussie (EC2 Connect, Session Manager ou SSH)
 - Commandes exécutées sur l'instance
-- Instance détruite
+- Instance détruite proprement
 - Capture d'écran ou log de chaque étape
 
-✅ **Rapport final** (1 page) :
-- Tableau comparatif des 3 méthodes
-- Avantages/inconvénients de chaque approche
-- Quelle méthode préférez-vous et pourquoi ?
+✅ **EXERCICE 3 (SDK - DynamoDB)** :
+- Table DynamoDB `Produits` créée
+- 3 produits ajoutés manuellement via Console
+- 2 produits ajoutés via SDK (P004, P005)
+- Opérations CRUD réussies (Create, Read, Update, Delete)
+- Screenshots des résultats dans la console DynamoDB
+- Code Python fonctionnel pour chaque opération
+
+✅ **Rapport final** (1-2 pages) :
+- Tableau comparatif des 3 méthodes (Console, CLI, SDK)
+- Cas d'usage de chaque approche (infrastructure vs données)
+- Pourquoi SDK pour DynamoDB et pas pour EC2 ?
+- Quelle méthode préférez-vous pour quel contexte ?
 
 ---
 
 ## 💡 Remarques importantes
 
-### Tagging obligatoire
+### Tagging obligatoire (EC2 uniquement)
 - **Name** : `EC2-[VOTRE_PRENOM]` (pour identifier facilement)
 - **Owner** : `[VOTRE_PRENOM]` (suivi des ressources)
 - **Classroom** : `AWS-Training-Jour2` (tracking pédagogique)
 
 ### Sécurité
-- ⚠️ **Jamais** de clé SSH dans le code
-- ⚠️ **Ne pas** partager votre fichier `.pem`
-- ⚠️ Limitez l'accès SSH à votre IP
+- ⚠️ **EC2** : Jamais de clé SSH dans le code, ne pas partager votre `.pem`
+- ⚠️ **SDK** : Jamais de credentials AWS dans Git, supprimer après le lab
+- ⚠️ **DynamoDB** : Utilisez IAM Roles en production (pas de credentials en dur)
 
 ### Coûts
-- Instances t3.micro = **gratuit** dans le tier gratuit AWS (750h/mois)
-- **⚠️ Terminez vos instances après chaque exercice**
-- N'oubliez pas les snapshots/volumes orphelins
+- **EC2** : Instances t3.micro = gratuit dans le tier gratuit AWS (750h/mois)
+- **DynamoDB** : On-demand = gratuit pour petites tables (25 GB storage gratuit)
+- **⚠️ Nettoyage obligatoire** :
+  - Terminez vos instances EC2 après chaque exercice
+  - Supprimez la table DynamoDB `Produits` en fin de LAB
 
 ---
 
@@ -1066,7 +817,7 @@ ec2 = boto3.client('ec2', region_name=REGION)  # ← Pas de credentials !
 ## ❓ Questions de réflexion
 
 1. **Quelle méthode (Console, CLI, SDK) vous semble la plus simple ? Pourquoi ?**
-2. **Dans quel contexte utiliseriez-vous chaque méthode ?** (Ex: Console pour exploration, CLI pour automatisation)
+2. **Dans quel contexte utiliseriez-vous chaque méthode ?** 
 3. **Quel est l'avantage d'utiliser des tags sur les ressources ?**
 4. **Comment pourriez-vous automatiser la création de plusieurs instances ?**
 
@@ -1146,4 +897,3 @@ Les 3 méthodes (Console, CLI, SDK) que vous venez de pratiquer sont largement u
 ✅ **IaC** : scalabilité, versionning, reproductibilité  
 
 Ces 4 approches sont **complémentaires** et souvent utilisées ensemble en production ! 
-
