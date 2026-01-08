@@ -175,12 +175,17 @@ exit
    echo "Adresse IP : $IP"
    ```
 
-2. **Connectez-vous via SSH** :
+2. **Televerser la clé et donner les droits en lecture** :
+   ```bash
+   chmod 400 aws-training-key.pem
+   ```
+
+3. **Connectez-vous via SSH** :
    ```bash
    ssh -i aws-training-key.pem ec2-user@$IP
    ```
 
-3. **Exécutez des commandes** :
+4. **Exécutez des commandes** :
    ```bash
    whoami
    uptime
@@ -192,7 +197,7 @@ exit
 1. **Récupérez l'ID d'instance** :
    ```bash
    INSTANCE_ID=$(aws ec2 describe-instances \
-     --filters "Name=tag:Name,Values=EC2-$MY_NAME" \
+     --filters "Name=tag:Name,Values=$MY_NAME" \
      --query 'Reservations[0].Instances[0].InstanceId' \
      --output text \
      --region us-east-1)
