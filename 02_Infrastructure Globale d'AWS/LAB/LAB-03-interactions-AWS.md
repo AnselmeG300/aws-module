@@ -251,88 +251,479 @@ exit
 
 ---
 
-## 🚀 EXERCICE 3 — AWS SDK (Python Boto3) avec Credentials
+## 🚀 EXERCICE 3 — AWS SDK (Python Boto3) avec DynamoDB
 
+### 🎯 Objectif de l'exercice
 
+**Le SDK n'est PAS utilisé pour créer des ressources d'infrastructure** (EC2, VPC, etc.) mais pour **communiquer avec les services AWS** et **manipuler des données**.
 
-### Étape 3.1 : Créer une instance EC2 via SDK
+Dans cet exercice, vous allez :
+1. ✅ Créer une table DynamoDB via la **console**
+2. ✅ Renseigner des produits via la **console**
+3. ✅ Utiliser le **SDK Python (Boto3)** pour effectuer des opérations **CRUD** (Create, Read, Update, Delete) sur la table
 
-1. **Installez Boto3** :
-   ```bash
-   pip install boto3
-   ```
+---
 
-2. **Créez un script Python** (`lab03-create-instance.py`) :
-   ```python
-   import boto3
-   import time
-   
-   # ⚠️ Configuration des credentials AWS
-   # IMPORTANT: Récupérez vos Access Key ID et Secret Access Key depuis IAM
-   # IAM > Users > Votre utilisateur > Security credentials > Access keys
-   
-   AWS_ACCESS_KEY_ID = "AKIA2XXXXXXXXXXX"      # ← Remplacez par votre Access Key
-   AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxxxxxxx" # ← Remplacez par votre Secret Key
-   
-   # Configuration
-   MY_NAME = "John"  # Remplacez par votre prénom
-   REGION = "us-east-1"
-   
-   # Créez un client EC2 avec vos credentials
-   ec2 = boto3.client(
-       'ec2',
-       region_name=REGION,
-       aws_access_key_id=AWS_ACCESS_KEY_ID,
-       aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-   )
-   
-   # Créez une instance
-   response = ec2.run_instances(
-       ImageId='ami-0c02fb54eef1ca2e6',  # Amazon Linux 2
-       InstanceType='t3.micro',
-       KeyName='aws-training-key',
-       SecurityGroups=['SSH-Access'],
-       TagSpecifications=[
-           {
-               'ResourceType': 'instance',
-               'Tags': [
-                   {'Key': 'Name', 'Value': f'EC2-{MY_NAME}'},
-                   {'Key': 'Owner', 'Value': MY_NAME},
-                   {'Key': 'Classroom', 'Value': 'AWS-Training-Jour2'}
-               ]
-           }
-       ],
-       MinCount=1,
-       MaxCount=1
-   )
-   
-   # Récupérez l'ID d'instance
-   instance_id = response['Instances'][0]['InstanceId']
-   print(f"✓ Instance créée : {instance_id}")
-   
-   # Attendez que l'instance soit en cours d'exécution
-   print("⏳ Attente du démarrage de l'instance...")
-   ec2.get_waiter('instance_running').wait(InstanceIds=[instance_id])
-   
-   # Récupérez l'adresse IP publique
-   instances = ec2.describe_instances(InstanceIds=[instance_id])
-   public_ip = instances['Reservations'][0]['Instances'][0]['PublicIpAddress']
-   print(f"✓ Adresse IP publique : {public_ip}")
-   print(f"✓ Connectez-vous avec EC2 Connect ou Session Manager")
-   ```
+### 📍 Deux scénarios d'exécution
 
-3. **Exécutez le script** :
-   ```bash
-   python lab03-create-instance.py
-   ```
+Le code SDK (Boto3) peut être exécuté dans **deux contextes différents** :
 
-4. **Notez l'ID d'instance et l'adresse IP**
+| Scénario | Lieu d'exécution | Credentials | Usage |
+|----------|------------------|-------------|-------|
+| **LOCAL** | Votre machine personnelle | Access Key + Secret Key (explicites) | Tests, développement, prototypage |
+| **AWS Lambda** | Fonction Lambda (serveur AWS) | Access Key + Secret Key (variables d'environnement) | Production, automatisation serverless |
 
-### Étape 3.2 : Se connecter à l'instance
+---
 
-1. **Option A : EC2 Connect (Navigateur)**
-   - EC2 > Instances > Sélectionnez votre instance
-   - Bouton **"Connect"** > Onglet **"EC2 Instance Connect"**
+## 🖥️ PARTIE 1 : Créer la table DynamoDB (Console)
+
+### Étape 1.1 : Créer la table via la console
+
+1. **Allez à [DynamoDB Console](https://console.aws.amazon.com/dynamodbv2)**
+
+2. **Cliquez sur "Create table"**
+
+3. **Remplissez les informations** :
+   - **Table name** : `Produits`
+   - **Partition key** : `ProductID` (Type: **String**)
+   - **Settings** : Laissez les paramètres par défaut (On-demand)
+
+4. **Cliquez sur "Create table"**
+
+5. **Attendez** que la table soit créée (statut : `Active`)
+
+---
+
+### Étape 1.2 : Renseigner des produits via la console
+
+1. **Allez dans votre table** `Produits`
+
+2. **Onglet "Explore table items"**
+
+3. **Cliquez sur "Create item"**
+
+4. **Ajoutez 3 produits manuellement** :
+
+**Produit 1** :
+```json
+{
+  "ProductID": "P001",
+  "Name": "Laptop Dell XPS",
+  "Description": "Ordinateur portable professionnel 15 pouces",
+  "Price": 1299.99,
+  "Stock": 15
+}
+```
+
+**Produit 2** :
+```json
+{
+  "ProductID": "P002",
+  "Name": "Souris Logitech",
+  "Description": "Souris sans fil ergonomique",
+  "Price": 39.99,
+  "Stock": 50
+}
+```
+
+**Produit 3** :
+```json
+{
+  "ProductID": "P003",
+  "Name": "Clavier mécanique",
+  "Description": "Clavier RGB gaming",
+  "Price": 89.99,
+  "Stock": 25
+}
+```
+
+5. **Vérifiez** que les 3 produits sont bien enregistrés
+
+---
+
+## 🖥️ PARTIE 2 : Scénario LOCAL (Votre machine)
+
+### Étape 2.1 : Installer Boto3
+
+```bash
+pip install boto3
+```
+
+---
+
+### Étape 2.2 : CREATE - Ajouter 2 nouveaux produits via SDK
+
+**Créez un script** `dynamo_create.py` :
+
+```python
+import boto3
+from decimal import Decimal
+
+# ⚠️ Configuration des credentials AWS
+AWS_ACCESS_KEY_ID = "AKIA2XXXXXXXXXXX"      # ← Remplacez
+AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxxxxxxx" # ← Remplacez
+
+REGION = "us-east-1"
+TABLE_NAME = "Produits"
+
+# Créez un client DynamoDB
+dynamodb = boto3.resource(
+    'dynamodb',
+    region_name=REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+)
+
+table = dynamodb.Table(TABLE_NAME)
+
+# 🔹 Produit 4 : Écran
+produit4 = {
+    'ProductID': 'P004',
+    'Name': 'Écran Samsung 27"',
+    'Description': 'Écran 4K UHD pour professionnels',
+    'Price': Decimal('349.99'),
+    'Stock': 12
+}
+
+# 🔹 Produit 5 : Webcam
+produit5 = {
+    'ProductID': 'P005',
+    'Name': 'Webcam Logitech HD',
+    'Description': 'Webcam 1080p pour visioconférence',
+    'Price': Decimal('79.99'),
+    'Stock': 30
+}
+
+# Insérer les produits
+table.put_item(Item=produit4)
+print(f"✅ Produit créé : {produit4['Name']}")
+
+table.put_item(Item=produit5)
+print(f"✅ Produit créé : {produit5['Name']}")
+
+print("\n✓ 2 nouveaux produits ajoutés via SDK!")
+```
+
+**Exécutez** :
+```bash
+python dynamo_create.py
+```
+
+---
+
+### Étape 2.3 : READ - Lire un produit par ID
+
+**Créez un script** `dynamo_read.py` :
+
+```python
+import boto3
+
+AWS_ACCESS_KEY_ID = "AKIA2XXXXXXXXXXX"
+AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxxxxxxx"
+
+REGION = "us-east-1"
+TABLE_NAME = "Produits"
+
+dynamodb = boto3.resource(
+    'dynamodb',
+    region_name=REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+)
+
+table = dynamodb.Table(TABLE_NAME)
+
+# Lire un produit par ID
+product_id = "P004"
+response = table.get_item(Key={'ProductID': product_id})
+
+if 'Item' in response:
+    item = response['Item']
+    print(f"📦 Produit trouvé :")
+    print(f"  ID: {item['ProductID']}")
+    print(f"  Nom: {item['Name']}")
+    print(f"  Description: {item['Description']}")
+    print(f"  Prix: {item['Price']} €")
+    print(f"  Stock: {item['Stock']}")
+else:
+    print(f"❌ Produit {product_id} introuvable")
+```
+
+**Exécutez** :
+```bash
+python dynamo_read.py
+```
+
+---
+
+### Étape 2.4 : UPDATE - Mettre à jour un produit par ID
+
+**Créez un script** `dynamo_update.py` :
+
+```python
+import boto3
+from decimal import Decimal
+
+AWS_ACCESS_KEY_ID = "AKIA2XXXXXXXXXXX"
+AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxxxxxxx"
+
+REGION = "us-east-1"
+TABLE_NAME = "Produits"
+
+dynamodb = boto3.resource(
+    'dynamodb',
+    region_name=REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+)
+
+table = dynamodb.Table(TABLE_NAME)
+
+# Mettre à jour le prix du produit P004
+product_id = "P004"
+new_price = Decimal('299.99')  # Prix réduit !
+
+response = table.update_item(
+    Key={'ProductID': product_id},
+    UpdateExpression='SET Price = :val',
+    ExpressionAttributeValues={':val': new_price},
+    ReturnValues='UPDATED_NEW'
+)
+
+print(f"✅ Produit {product_id} mis à jour !")
+print(f"  Nouveau prix : {response['Attributes']['Price']} €")
+```
+
+**Exécutez** :
+```bash
+python dynamo_update.py
+```
+
+---
+
+### Étape 2.5 : DELETE - Supprimer un produit par ID
+
+**Créez un script** `dynamo_delete.py` :
+
+```python
+import boto3
+
+AWS_ACCESS_KEY_ID = "AKIA2XXXXXXXXXXX"
+AWS_SECRET_ACCESS_KEY = "xxxxxxxxxxxxxxxxxx"
+
+REGION = "us-east-1"
+TABLE_NAME = "Produits"
+
+dynamodb = boto3.resource(
+    'dynamodb',
+    region_name=REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+)
+
+table = dynamodb.Table(TABLE_NAME)
+
+# Supprimer le produit P005
+product_id = "P005"
+
+table.delete_item(Key={'ProductID': product_id})
+print(f"🗑️  Produit {product_id} supprimé avec succès")
+```
+
+**Exécutez** :
+```bash
+python dynamo_delete.py
+```
+
+---
+
+### Étape 2.6 : Vérification finale dans la console
+
+1. **Allez dans DynamoDB Console**
+2. **Vérifiez** :
+   - ✅ P004 et P005 ont été créés (P005 devrait être supprimé ensuite)
+   - ✅ P004 a un nouveau prix (299.99€)
+   - ✅ P005 n'existe plus
+
+---
+
+## ☁️ PARTIE 3 : Scénario LAMBDA (Serverless)
+
+### Étape 3.1 : Créer une fonction Lambda pour CREATE
+
+1. **Allez à [AWS Lambda](https://console.aws.amazon.com/lambda)**
+
+2. **Créez une fonction** :
+   - Runtime : **Python 3.11**
+   - Nom : `DynamoCreate`
+   - Role : Créer un rôle avec politique **AmazonDynamoDBFullAccess**
+
+3. **Code de la fonction** :
+
+```python
+import boto3
+import json
+import os
+from decimal import Decimal
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+
+REGION = "us-east-1"
+TABLE_NAME = "Produits"
+
+def lambda_handler(event, context):
+    try:
+        dynamodb = boto3.resource(
+            'dynamodb',
+            region_name=REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
+        
+        table = dynamodb.Table(TABLE_NAME)
+        
+        # Créer un nouveau produit (reçu via event)
+        product = {
+            'ProductID': event.get('ProductID', 'P006'),
+            'Name': event.get('Name', 'Produit Lambda'),
+            'Description': event.get('Description', 'Créé via Lambda'),
+            'Price': Decimal(str(event.get('Price', 99.99))),
+            'Stock': event.get('Stock', 10)
+        }
+        
+        table.put_item(Item=product)
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': 'Produit créé avec succès',
+                'product': event
+            })
+        }
+    
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': str(e)})
+        }
+```
+
+4. **Configurez les variables d'environnement** :
+   - `AWS_ACCESS_KEY_ID` : Votre Access Key
+   - `AWS_SECRET_ACCESS_KEY` : Votre Secret Key
+
+5. **Testez avec cet événement** :
+```json
+{
+  "ProductID": "P006",
+  "Name": "Casque Bluetooth",
+  "Description": "Casque sans fil noise cancelling",
+  "Price": 149.99,
+  "Stock": 20
+}
+```
+
+---
+
+### Étape 3.2 : Créer une fonction Lambda pour READ
+
+```python
+import boto3
+import json
+import os
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+
+REGION = "us-east-1"
+TABLE_NAME = "Produits"
+
+def lambda_handler(event, context):
+    try:
+        dynamodb = boto3.resource(
+            'dynamodb',
+            region_name=REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
+        
+        table = dynamodb.Table(TABLE_NAME)
+        
+        # Lire un produit par ID
+        product_id = event.get('ProductID', 'P001')
+        response = table.get_item(Key={'ProductID': product_id})
+        
+        if 'Item' in response:
+            # Convertir Decimal en float pour JSON
+            item = response['Item']
+            if 'Price' in item:
+                item['Price'] = float(item['Price'])
+            if 'Stock' in item:
+                item['Stock'] = float(item['Stock'])
+                
+            print("Produit trouvé:", item)
+            return {
+                'statusCode': 200,
+                'body': json.dumps({
+                    'product': item
+                })
+            }
+        else:
+            return {
+                'statusCode': 404,
+                'body': json.dumps({
+                    'error': f'Produit {product_id} introuvable'
+                })
+            }
+    
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': str(e)})
+        }
+```
+
+**Testez avec** :
+```json
+{
+  "ProductID": "P006"
+}
+```
+
+---
+
+### 📊 Comparaison : LOCAL vs LAMBDA
+
+| Aspect | LOCAL | LAMBDA |
+|--------|-------|--------|
+| **Lieu** | Votre machine | Serveur AWS |
+| **Credentials** | En dur dans le code | Variables d'environnement |
+| **Démarrage** | Manuel (`python script.py`) | Déclenché par événement/API |
+| **Durée max** | Illimitée | 15 minutes |
+| **Coût** | Gratuit | Gratuit (1M requêtes/mois) |
+| **Usage** | Dev/test | Production/automatisation |
+| **Sécurité** | ⚠️ Locale seulement | ✅ Isolée en AWS |
+
+---
+
+### ⚠️ Important : Sécurité des credentials
+
+**LOCAL** :
+- ✅ Acceptable en développement
+- ❌ JAMAIS en production ou dans Git
+- Supprimez après le test
+
+**LAMBDA** :
+- ✅ Les variables d'environnement isolées dans AWS
+- ✅ Ne sont pas visibles publiquement
+- ⚠️ Toujours préférable d'utiliser IAM Roles
+
+**Bonne pratique en production** :
+```python
+# Production avec IAM Role (pas de credentials)
+dynamodb = boto3.resource('dynamodb', region_name=REGION)  # ← Pas de credentials !
+```
    - Cliquez sur **"Connect"** pour accéder au terminal
 
 2. **Option B : Session Manager**
@@ -345,7 +736,7 @@ exit
    ssh -i aws-training-key.pem ec2-user@<PUBLIC_IP>
    ```
 
-### Étape 3.3 : Détruire l'instance via SDK
+### Étape 3.3 : Détruire l'instance via SDK (Local)
 
 1. **Créez un script Python** (`lab03-terminate-instance.py`) :
    ```python
@@ -394,6 +785,220 @@ exit
    ```bash
    python lab03-terminate-instance.py
    ```
+
+---
+
+### ☁️ Scénario 2 : Exécution en AWS LAMBDA (Serverless)
+
+**Utilisation** : Production, automatisation serverless, déclenché par événements
+
+**Spécificité** : Les credentials restent en dur (dans les variables d'environnement Lambda)
+
+#### Étape 3.1b : Créer une instance EC2 via SDK (Lambda)
+
+1. **Créez une fonction Lambda** dans la console AWS :
+   - AWS Lambda > Functions > **Create function**
+   - Runtime : **Python 3.11** (ou plus récent)
+   - Execution role : créez un rôle avec la politique **AmazonEC2FullAccess**
+
+2. **Code de la fonction Lambda** (`lambda_function.py`) :
+   ```python
+   import boto3
+   import json
+   import os
+   
+   # ⚠️ Les credentials sont stockés en variables d'environnement Lambda
+   # (Configuration > Environment variables dans la console Lambda)
+   AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+   AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+   
+   # Configuration
+   MY_NAME = os.environ.get('MY_NAME', 'John')  # Variable d'env ou défaut
+   REGION = "us-east-1"
+   
+   def lambda_handler(event, context):
+       try:
+           # Créez un client EC2 avec les credentials d'environnement
+           ec2 = boto3.client(
+               'ec2',
+               region_name=REGION,
+               aws_access_key_id=AWS_ACCESS_KEY_ID,
+               aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+           )
+           
+           # Créez une instance
+           response = ec2.run_instances(
+               ImageId='ami-0c02fb54eef1ca2e6',  # Amazon Linux 2
+               InstanceType='t3.micro',
+               KeyName='aws-training-key',
+               SecurityGroups=['SSH-Access'],
+               TagSpecifications=[
+                   {
+                       'ResourceType': 'instance',
+                       'Tags': [
+                           {'Key': 'Name', 'Value': f'EC2-{MY_NAME}'},
+                           {'Key': 'Owner', 'Value': MY_NAME},
+                           {'Key': 'Classroom', 'Value': 'AWS-Training-Lambda'}
+                       ]
+                   }
+               ],
+               MinCount=1,
+               MaxCount=1
+           )
+           
+           instance_id = response['Instances'][0]['InstanceId']
+           
+           return {
+               'statusCode': 200,
+               'body': json.dumps({
+                   'message': f'Instance créée avec succès',
+                   'instance_id': instance_id
+               })
+           }
+       
+       except Exception as e:
+           return {
+               'statusCode': 500,
+               'body': json.dumps({
+                   'error': str(e)
+               })
+           }
+   ```
+
+3. **Configuration des variables d'environnement Lambda** :
+   - Allez à **AWS Lambda > Functions > Votre fonction**
+   - Onglet **Configuration > Environment variables**
+   - Ajoutez :
+     - **Clé** : `AWS_ACCESS_KEY_ID`  
+       **Valeur** : `AKIA2XXXXXXXXXXX` (votre Access Key)
+     - **Clé** : `AWS_SECRET_ACCESS_KEY`  
+       **Valeur** : `xxxxxxxxxxxxxxxxxx` (votre Secret Key)
+     - **Clé** : `MY_NAME`  
+       **Valeur** : `John` (votre prénom)
+
+4. **Testez la fonction Lambda** :
+   - Bouton **Test** dans la console
+   - Event JSON (laissez vide ou `{}`)
+   - Cliquez sur **Test**
+   - Vérifiez dans les logs que l'instance a été créée
+
+---
+
+#### Étape 3.2b : Se connecter à l'instance (Lambda)
+
+Comme en scénario local, utilisez :
+- **EC2 Connect (Navigateur)** — Recommandé
+- **Session Manager (AWS Systems Manager)**
+- **SSH** (si vous avez la clé)
+
+Les adresses IP sont visibles dans la **console EC2 > Instances**
+
+---
+
+#### Étape 3.3b : Détruire l'instance via SDK (Lambda)
+
+1. **Code Lambda pour terminer l'instance** (`lambda_terminate.py`) :
+   ```python
+   import boto3
+   import json
+   import os
+   
+   AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+   AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+   
+   MY_NAME = os.environ.get('MY_NAME', 'John')
+   REGION = "us-east-1"
+   
+   def lambda_handler(event, context):
+       try:
+           ec2 = boto3.client(
+               'ec2',
+               region_name=REGION,
+               aws_access_key_id=AWS_ACCESS_KEY_ID,
+               aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+           )
+           
+           # Trouvez l'instance par son tag Name
+           instances = ec2.describe_instances(
+               Filters=[
+                   {'Name': 'tag:Name', 'Values': [f'EC2-{MY_NAME}']},
+                   {'Name': 'instance-state-name', 'Values': ['running', 'stopped']}
+               ]
+           )
+           
+           if instances['Reservations']:
+               instance_id = instances['Reservations'][0]['Instances'][0]['InstanceId']
+               
+               # Terminez l'instance
+               ec2.terminate_instances(InstanceIds=[instance_id])
+               
+               return {
+                   'statusCode': 200,
+                   'body': json.dumps({
+                       'message': f'Instance {instance_id} en cours de suppression'
+                   })
+               }
+           else:
+               return {
+                   'statusCode': 404,
+                   'body': json.dumps({
+                       'error': 'Aucune instance trouvée'
+                   })
+               }
+       
+       except Exception as e:
+           return {
+               'statusCode': 500,
+               'body': json.dumps({
+                   'error': str(e)
+               })
+           }
+   ```
+
+2. **Configuration Lambda** :
+   - Mêmes variables d'environnement que pour la création
+
+3. **Testez la suppression** :
+   - Bouton **Test** dans la console
+   - Vérifiez dans EC2 > Instances que l'instance est en cours de suppression
+
+---
+
+### 📊 Comparaison : LOCAL vs LAMBDA
+
+| Aspect | LOCAL | LAMBDA |
+|--------|-------|--------|
+| **Lieu** | Votre machine | Serveur AWS |
+| **Credentials** | En dur dans le code | Variables d'environnement |
+| **Démarrage** | Manuel (`python script.py`) | Déclenché par événement/API |
+| **Durée max** | Illimitée | 15 minutes |
+| **Coût** | Gratuit | Gratuit (1M requêtes/mois) |
+| **Usage** | Dev/test | Production/automatisation |
+| **Sécurité** | ⚠️ Locale seulement | ✅ Isolée en AWS |
+
+---
+
+### ⚠️ Important : Sécurité des credentials
+
+**LOCAL** :
+- ✅ Acceptable en développement
+- ❌ JAMAIS en production ou dans Git
+- Supprimez après le test
+
+**LAMBDA** :
+- ✅ Les variables d'environnement isolées dans AWS
+- ✅ Ne sont pas visibles publiquement
+- ⚠️ Toujours préférable à les avoir en dur dans le code
+
+**Bonne pratique en production** :
+- Utilisez **AWS IAM Roles** (pas de credentials en dur)
+- Lambda hérite automatiquement de son rôle d'exécution
+- Pas besoin de credentials !
+
+```python
+# Production avec IAM Role (pas de credentials)
+ec2 = boto3.client('ec2', region_name=REGION)  # ← Pas de credentials !
+```
 
 ---
 
