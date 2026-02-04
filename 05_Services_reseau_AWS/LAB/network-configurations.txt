@@ -1,0 +1,179 @@
+====================================================================
+CONFIGURATIONS RÉSEAU PAR APPRENANT - MODULE M2i AWS
+====================================================================
+
+⚠️ IMPORTANT : Chaque apprenant DOIT utiliser SA propre plage IP
+Ne JAMAIS utiliser la configuration d'un autre apprenant !
+
+====================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 1 : Hannah                                            │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.1.0.0/16
+Subnet Public 1        : 10.1.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.1.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.1.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.1.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 2 : Bastien                                             │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.2.0.0/16
+Subnet Public 1        : 10.2.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.2.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.2.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.2.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 3 : Benoit                                            │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.3.0.0/16
+Subnet Public 1        : 10.3.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.3.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.3.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.3.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 4 : Brittany                                            │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.4.0.0/16
+Subnet Public 1        : 10.4.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.4.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.4.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.4.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 5 : Bryan                                             │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.5.0.0/16
+Subnet Public 1        : 10.5.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.5.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.5.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.5.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 6 : Guillaume                                             │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.6.0.0/16
+Subnet Public 1        : 10.6.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.6.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.6.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.6.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 7 : John                                         │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.7.0.0/16
+Subnet Public 1        : 10.7.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.7.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.7.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.7.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 8 : Louis                                          │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.8.0.0/16
+Subnet Public 1        : 10.8.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.8.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.8.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.8.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 9 : Mohammad                                              │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.9.0.0/16
+Subnet Public 1        : 10.9.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.9.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.9.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.9.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 10 : Nicolas                                             │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.10.0.0/16
+Subnet Public 1        : 10.10.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.10.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.10.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.10.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 11 : Nina                                           │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.11.0.0/16
+Subnet Public 1        : 10.11.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.11.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.11.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.11.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 12 : Patrick                                    │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.12.0.0/16
+Subnet Public 1        : 10.12.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.12.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.12.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.12.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 13 : Khadija                                          │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.13.0.0/16
+Subnet Public 1        : 10.13.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.13.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.13.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.13.12.0/24 (AZ: us-east-1b)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ APPRENANT 14 : Kevin_Canovas                                    │
+└─────────────────────────────────────────────────────────────────┘
+VPC CIDR               : 10.14.0.0/16
+Subnet Public 1        : 10.14.1.0/24  (AZ: us-east-1a)
+Subnet Public 2        : 10.14.2.0/24  (AZ: us-east-1b)
+Subnet Private 1       : 10.14.11.0/24 (AZ: us-east-1a)
+Subnet Private 2       : 10.14.12.0/24 (AZ: us-east-1b)
+
+====================================================================
+NOTES IMPORTANTES
+====================================================================
+
+1. Chaque /16 donne 65,536 adresses IP (largement suffisant)
+2. Chaque /24 donne 254 adresses IP utilisables
+3. Les sous-réseaux publics (1.0/24, 2.0/24) sont dans des AZ différentes pour la haute disponibilité
+4. Les sous-réseaux privés (11.0/24, 12.0/24) sont également dans des AZ différentes
+5. AUCUNE plage ne se chevauche entre les apprenants
+
+====================================================================
+ARCHITECTURE RÉSEAU
+====================================================================
+
+┌────────────────────────────────────────────────────────────────┐
+│                    VPC 10.X.0.0/16                             │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│  AZ us-east-1a              │       AZ us-east-1b            │
+│                              │                                │
+│  ┌──────────────────┐        │       ┌──────────────────┐    │
+│  │ Public Subnet 1  │        │       │ Public Subnet 2  │    │
+│  │   10.X.1.0/24    │        │       │   10.X.2.0/24    │    │
+│  │                  │        │       │                  │    │
+│  │  [EC2 + Nginx]   │◄───────┼──────►│  [EC2 + Nginx]   │    │
+│  └──────────────────┘        │       └──────────────────┘    │
+│           ▲                  │                ▲               │
+│           │                  │                │               │
+│      [NACL + ALB + ASG]      │                │               │
+│                              │                                │
+│  ┌──────────────────┐        │       ┌──────────────────┐    │
+│  │ Private Subnet 1 │        │       │ Private Subnet 2 │    │
+│  │  10.X.11.0/24    │        │       │  10.X.12.0/24    │    │
+│  │                  │        │       │                  │    │
+│  │  [EC2 + Nginx]   │        │       │  [EC2 + Nginx]   │    │
+│  └──────────────────┘        │       └──────────────────┘    │
+│                              │                                │
+└────────────────────────────────────────────────────────────────┘
+                              │
+                    [Internet Gateway]
+                              │
+                         [Internet]
+
+====================================================================
