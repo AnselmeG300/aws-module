@@ -1,8 +1,3 @@
-Parfait 👍
-Voici un **résumé clair, structuré et rapidement révisable** de **tout le Module 4 – Networking**, prêt à être **copié-collé tel quel** dans un fichier de révision.
-
----
-
 # ✅ Module 4 – Networking : Résumé de révision rapide
 
 ## 1. Concepts fondamentaux du réseau dans AWS
