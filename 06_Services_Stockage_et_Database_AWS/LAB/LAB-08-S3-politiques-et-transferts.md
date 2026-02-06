@@ -273,9 +273,13 @@ echo "Politique de bucket appliquee."
 
 ---
 
-#### Politique 2 : Permettre l'écriture dans le bucket destination
+#### Politique 2 : Permettre l'écriture dans le bucket destination 1
 
-```json
+```bash
+# Créer la politique pour bucket destination 1
+dest1_bucket="m2i-dest1-anselme-bucket"  # ← Votre bucket
+
+cat <<EOF > dest1-bucket-policy.json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -290,17 +294,56 @@ echo "Politique de bucket appliquee."
         "s3:ReplicateDelete",
         "s3:ReplicateTags"
       ],
-      "Resource": "arn:aws:s3:::m2i-dest1-anselme-bucket/*"
+      "Resource": "arn:aws:s3:::$dest1_bucket/*"
     }
   ]
 }
+EOF
+
+# Appliquer au bucket destination 1
+aws s3api put-bucket-policy \
+  --bucket "$dest1_bucket" \
+  --policy file://dest1-bucket-policy.json
+
+echo "Politique appliquée au bucket destination 1"
 ```
 
+---
+
+#### Politique 3 : Permettre l'écriture dans le bucket destination 2 (cross-region)
+
 ```bash
-# Appliquer au bucket destination
+# Créer la politique pour bucket destination 2 (cross-region)
+dest2_bucket="m2i-dest2-anselme-bucket"  # ← Votre bucket
+
+cat <<EOF > dest2-bucket-policy.json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowReplicationWrite",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": [
+        "s3:ReplicateObject",
+        "s3:ReplicateDelete",
+        "s3:ReplicateTags"
+      ],
+      "Resource": "arn:aws:s3:::$dest2_bucket/*"
+    }
+  ]
+}
+EOF
+
+# Appliquer au bucket destination 2
 aws s3api put-bucket-policy \
-  --bucket m2i-dest1-anselme-bucket \
-  --policy file://dest-bucket-policy.json
+  --bucket "$dest2_bucket" \
+  --policy file://dest2-bucket-policy.json \
+  --region us-east-2
+
+echo "Politique appliquée au bucket destination 2 (cross-region)"
 ```
 
 ---
@@ -963,4 +1006,3 @@ echo "Nettoyage termine."
 ---
 
 **🎉 Félicitations !** Vous maîtrisez maintenant les politiques S3 et les transferts de fichiers entre buckets ! 🚀
-
