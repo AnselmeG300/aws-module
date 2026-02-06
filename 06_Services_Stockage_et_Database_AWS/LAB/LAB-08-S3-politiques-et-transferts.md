@@ -239,12 +239,7 @@ cat <<EOF > bucket-policy.json
         "s3:GetObject",
         "s3:GetObjectVersion"
       ],
-      "Resource": "arn:aws:s3:::$source_bucket/*",
-      "Condition": {
-        "StringEquals": {
-          "s3:x-amz-server-side-encryption": "AES256"
-        }
-      }
+      "Resource": "arn:aws:s3:::$source_bucket/*"
     },
     {
       "Sid": "AllowListBucket",
@@ -968,3 +963,4 @@ echo "Nettoyage termine."
 ---
 
 **🎉 Félicitations !** Vous maîtrisez maintenant les politiques S3 et les transferts de fichiers entre buckets ! 🚀
+
